@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>50 Anos em 5 | Systems Engineering Command Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { background-color: #09090b; color: #f4f4f5; font-family: system-ui, -apple-system, sans-serif; }
+    input[type="checkbox"] { accent-color: #10b981; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #18181b; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 max-w-[1440px] mx-auto">
+
+  <!-- TOP HEADER -->
+  <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 border-b border-zinc-800 pb-5">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <span class="px-2.5 py-0.5 text-xs font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded">50 ANOS EM 5</span>
+        <h1 class="text-xl md:text-2xl font-bold tracking-tight text-zinc-100">Systems Engineering Master Tracker</h1>
+      </div>
+      <p class="text-xs md:text-sm text-zinc-400 mt-1">Execução linear: Roteiro 42 + Shadow Bootcamps • Protocolo CS:APP • Estruturas de Dados (0–15) • 17 Livros • 30 Passos</p>
+    </div>
+
+    <!-- Deep Work Timer & Controls -->
+    <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-between lg:justify-end">
+      <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg">
+        <span class="text-xs font-mono text-zinc-400">DEEP WORK:</span>
+        <span id="timerDisplay" class="font-mono text-sm font-bold text-emerald-400">60:00</span>
+        <button onclick="toggleTimer()" id="timerBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-0.5 rounded text-xs font-medium transition">Iniciar</button>
+        <button onclick="resetTimer()" class="text-zinc-400 hover:text-zinc-200 text-xs px-1">↺</button>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="exportData()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-lg text-xs font-mono transition">Exportar JSON</button>
+        <label class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-lg text-xs font-mono transition cursor-pointer">
+          Importar
+          <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)" />
+        </label>
+        <button onclick="resetAll()" class="bg-zinc-900 hover:bg-red-950/60 text-zinc-400 hover:text-red-400 border border-zinc-800 px-3 py-1.5 rounded-lg text-xs font-mono transition">Reset</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- NEXT ACTION ENGINE (O QUE FAZER AGORA) -->
+  <section class="bg-gradient-to-r from-emerald-950/30 via-zinc-900/80 to-zinc-900/80 border border-emerald-500/30 rounded-xl p-4 mb-6">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <h2 class="text-xs font-mono uppercase tracking-wider text-emerald-400 font-semibold">Foco de Execução Imediata (Sente e Execute)</h2>
+      </div>
+      <span id="globalProgressBadge" class="text-xs font-mono text-zinc-300 bg-zinc-800/80 px-2.5 py-0.5 rounded">Progresso Global: 0%</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div class="bg-zinc-950/70 border border-zinc-800/80 p-3 rounded-lg">
+        <span class="text-[11px] font-mono text-zinc-400 uppercase">1. Trilha Mestra (Passo Atual)</span>
+        <p id="nextMasterStep" class="text-sm font-semibold text-zinc-100 mt-1 truncate">-</p>
+        <p id="nextMasterPhase" class="text-[11px] text-emerald-400 font-mono mt-0.5">-</p>
+      </div>
+      <div class="bg-zinc-950/70 border border-zinc-800/80 p-3 rounded-lg">
+        <span class="text-[11px] font-mono text-zinc-400 uppercase">2. Roteiro 42 / Bootcamp</span>
+        <p id="next42Item" class="text-sm font-semibold text-zinc-100 mt-1 truncate">-</p>
+        <p id="next42Phase" class="text-[11px] text-blue-400 font-mono mt-0.5">-</p>
+      </div>
+      <div class="bg-zinc-950/70 border border-zinc-800/80 p-3 rounded-lg">
+        <span class="text-[11px] font-mono text-zinc-400 uppercase">3. Gate CS:APP Ativo</span>
+        <p id="nextCsappGate" class="text-sm font-semibold text-zinc-100 mt-1 truncate">-</p>
+        <p id="nextCsappStatus" class="text-[11px] text-purple-400 font-mono mt-0.5">-</p>
+      </div>
+      <div class="bg-zinc-950/70 border border-zinc-800/80 p-3 rounded-lg">
+        <span class="text-[11px] font-mono text-zinc-400 uppercase">4. Estrutura de Dados Alvo</span>
+        <p id="nextDsItem" class="text-sm font-semibold text-zinc-100 mt-1 truncate">-</p>
+        <p id="nextDsLevel" class="text-[11px] text-amber-400 font-mono mt-0.5">-</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- KPI SUMMARY -->
+  <section class="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
+    <div class="bg-zinc-900/60 border border-zinc-800 p-3.5 rounded-xl">
+      <span class="text-[11px] font-mono text-zinc-400 uppercase">Consistência Semanal</span>
+      <p id="kpiWeeklyRate" class="text-xl font-bold text-emerald-400 mt-1">0%</p>
+    </div>
+    <div class="bg-zinc-900/60 border border-zinc-800 p-3.5 rounded-xl">
+      <span class="text-[11px] font-mono text-zinc-400 uppercase">Trilha 30 Passos</span>
+      <p id="kpiMaster" class="text-xl font-bold text-zinc-100 mt-1">0 / 30</p>
+    </div>
+    <div class="bg-zinc-900/60 border border-zinc-800 p-3.5 rounded-xl">
+      <span class="text-[11px] font-mono text-zinc-400 uppercase">42 + Bootcamps</span>
+      <p id="kpi42" class="text-xl font-bold text-blue-400 mt-1">0 / 58</p>
+    </div>
+    <div class="bg-zinc-900/60 border border-zinc-800 p-3.5 rounded-xl">
+      <span class="text-[11px] font-mono text-zinc-400 uppercase">CS:APP Labs</span>
+      <p id="kpiCsapp" class="text-xl font-bold text-purple-400 mt-1">0 / 7</p>
+    </div>
+    <div class="bg-zinc-900/60 border border-zinc-800 p-3.5 rounded-xl">
+      <span class="text-[11px] font-mono text-zinc-400 uppercase">Estruturas (0-15)</span>
+      <p id="kpiDs" class="text-xl font-bold text-amber-400 mt-1">0 / 52</p>
+    </div>
+    <div class="bg-zinc-900/60 border border-zinc-800 p-3.5 rounded-xl">
+      <span class="text-[11px] font-mono text-zinc-400 uppercase">Capítulos Lidos</span>
+      <p id="kpiBooks" class="text-xl font-bold text-cyan-400 mt-1">0 / 0</p>
+    </div>
+  </section>
+
+  <!-- WEEKLY STUDY TRACKER & CHART -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div class="lg:col-span-2 bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 overflow-x-auto">
+      <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+        <div>
+          <h2 class="text-sm font-semibold text-zinc-200">Blocos Diários de Estudo & Engenharia (Sequência Semanal)</h2>
+          <p class="text-xs text-zinc-400">Marque os pilares executados em cada dia da semana</p>
+        </div>
+        <div class="flex gap-2">
+          <input id="habitInput" type="text" placeholder="Nova meta de estudo..." class="bg-zinc-900 border border-zinc-700 rounded px-2.5 py-1 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500" />
+          <button onclick="addHabit()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded text-xs transition">+</button>
+          <button onclick="resetWeek()" class="text-xs text-zinc-400 hover:text-red-400 ml-1">Fechar Semana</button>
+        </div>
+      </div>
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-zinc-800 text-[11px] font-mono text-zinc-400 uppercase">
+            <th class="py-2 px-2">Bloco de Estudo</th>
+            <th class="py-2 px-2 text-center">Seg</th>
+            <th class="py-2 px-2 text-center">Ter</th>
+            <th class="py-2 px-2 text-center">Qua</th>
+            <th class="py-2 px-2 text-center">Qui</th>
+            <th class="py-2 px-2 text-center">Sex</th>
+            <th class="py-2 px-2 text-center">Sáb</th>
+            <th class="py-2 px-2 text-center">Dom</th>
+            <th class="py-2 px-2 text-center">Streak</th>
+            <th class="py-2 px-1"></th>
+          </tr>
+        </thead>
+        <tbody id="habitList" class="divide-y divide-zinc-800/60 text-xs md:text-sm"></tbody>
+      </table>
+    </div>
+
+    <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 flex flex-col justify-between">
+      <div>
+        <h2 class="text-sm font-semibold text-zinc-200 mb-1">Gráfico de Sequência Semanal</h2>
+        <p class="text-xs text-zinc-400 mb-4">Taxa de cumprimento dos blocos técnicos por dia (%)</p>
+      </div>
+      <div class="relative h-52 w-full">
+        <canvas id="weeklyChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION TABS -->
+  <div class="flex flex-wrap gap-2 border-b border-zinc-800 pb-3 mb-6">
+    <button onclick="switchTab('tab-master')" id="btn-tab-master" class="tab-btn bg-emerald-600 text-white px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition">1. Sequência Mestra (30 Passos)</button>
+    <button onclick="switchTab('tab-42')" id="btn-tab-42" class="tab-btn bg-zinc-900 hover:bg-zinc-800 text-zinc-300 px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition">2. Roteiro 42 + Bootcamps (58)</button>
+    <button onclick="switchTab('tab-csapp')" id="btn-tab-csapp" class="tab-btn bg-zinc-900 hover:bg-zinc-800 text-zinc-300 px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition">3. Protocolo CS:APP (Hard Gates)</button>
+    <button onclick="switchTab('tab-ds')" id="btn-tab-ds" class="tab-btn bg-zinc-900 hover:bg-zinc-800 text-zinc-300 px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition">4. Estruturas de Dados (Níveis 0–15)</button>
+    <button onclick="switchTab('tab-books')" id="btn-tab-books" class="tab-btn bg-zinc-900 hover:bg-zinc-800 text-zinc-300 px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition">5. Biblioteca Fundamental (17 Livros)</button>
+    <button onclick="switchTab('tab-years')" id="btn-tab-years" class="tab-btn bg-zinc-900 hover:bg-zinc-800 text-zinc-300 px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition">6. Mapa de 5 Anos (Macro)</button>
+  </div>
+
+  <!-- TAB 1: MASTER 30 STEPS -->
+  <div id="tab-master" class="tab-content space-y-6"></div>
+
+  <!-- TAB 2: 42 & BOOTCAMPS -->
+  <div id="tab-42" class="tab-content hidden space-y-6"></div>
+
+  <!-- TAB 3: CSAPP PROTOCOL -->
+  <div id="tab-csapp" class="tab-content hidden space-y-4"></div>
+
+  <!-- TAB 4: DATA STRUCTURES -->
+  <div id="tab-ds" class="tab-content hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+  <!-- TAB 5: BOOKS -->
+  <div id="tab-books" class="tab-content hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+  <!-- TAB 6: 5-YEAR PLAN -->
+  <div id="tab-years" class="tab-content hidden space-y-4"></div>
+
+  <script>
+    const STORAGE_KEY = 'joao_50_em_5_master_v2';
+    const DAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
+    const defaultState = {
+      habits: [
+        { id: 1, name: 'Leitura Teórica (CS:APP / OSTEP / TLPI / Livros)', days: [true, true, true, false, false, false, false] },
+        { id: 2, name: 'Roteiro 42 & Shadow Bootcamps (C / UNIX / C++)', days: [true, true, true, false, false, false, false] },
+        { id: 3, name: 'Implementação de Estruturas de Dados (Níveis 0–15)', days: [false, true, true, false, false, false, false] },
+        { id: 4, name: 'CS:APP Labs & Reverse Engineering (GDB / Valgrind)', days: [true, false, true, false, false, false, false] },
+        { id: 5, name: 'Projetos da Trilha & Projetos de Impacto (ft_*)', days: [false, true, false, false, false, false, false] }
+      ],
+      masterSteps: [
+        // Fase 1
+        { step: 1, phase: 'Fase 1: Fundações, Bits e Memória Manual', type: '42', name: '42 (Fases 0 e 1): Shell 00/01 até C 13 + Libft (Arrays, ponteiros, structs, FDs, listas e árvores)', progress: 100, done: true },
+        { step: 2, phase: 'Fase 1: Fundações, Bits e Memória Manual', type: 'CSAPP', name: 'CSAPP Lab: Data Lab (Puzzles lógicos com operadores bitwise)', progress: 100, done: true },
+        { step: 3, phase: 'Fase 1: Fundações, Bits e Memória Manual', type: 'PROJ-BASE', name: 'Trilha Base - Projeto 01: Compressor Huffman (Árvores e manipulação de bits)', progress: 0, done: false },
+        { step: 4, phase: 'Fase 1: Fundações, Bits e Memória Manual', type: '42', name: '42 (Rank 1): ft_printf e get_next_line (Variadic functions e buffers estáticos)', progress: 0, done: false },
+        { step: 5, phase: 'Fase 1: Fundações, Bits e Memória Manual', type: 'CSAPP', name: 'CSAPP Lab: Bomb Lab & Attack Lab (Assembly x86_64, buffer overflow e injeção)', progress: 0, done: false },
+        { step: 6, phase: 'Fase 1: Fundações, Bits e Memória Manual', type: 'CSAPP', name: 'CSAPP Lab: Malloc Lab (Alocador de memória com listas de blocos livres)', progress: 0, done: false },
+        { step: 7, phase: 'Fase 1: Fundações, Bits e Memória Manual', type: 'PROJ-BASE', name: 'Trilha Base - Projeto 02: Alocador de Memória (malloc/free customizado com brk/mmap)', progress: 0, done: false },
+        { step: 8, phase: 'Fase 1: Fundações, Bits e Memória Manual', type: 'IMPACTO', name: 'PROJETO DE IMPACTO: ft_redis (SDS strings, tabelas hash, event loop com io_uring e thread pool)', progress: 0, done: false },
+        // Fase 2
+        { step: 9, phase: 'Fase 2: Sistema Operacional, Kernel e Processos', type: '42', name: '42 (Rank 2): Born2beroot (SysAdmin, Linux) + push_swap + minitalk (Sinais UNIX)', progress: 0, done: false },
+        { step: 10, phase: 'Fase 2: Sistema Operacional, Kernel e Processos', type: '42', name: '42 (Rank 3): pipex (Redirecionamento, IPC e pipes)', progress: 0, done: false },
+        { step: 11, phase: 'Fase 2: Sistema Operacional, Kernel e Processos', type: 'CSAPP', name: 'CSAPP Lab: Shell Lab (Controle de jobs, sinais e processos)', progress: 0, done: false },
+        { step: 12, phase: 'Fase 2: Sistema Operacional, Kernel e Processos', type: '42', name: '42 (Rank 3): minishell (Arquitetura de shell e execução)', progress: 0, done: false },
+        { step: 13, phase: 'Fase 2: Sistema Operacional, Kernel e Processos', type: 'PROJ-BASE', name: 'Trilha Base - Projeto 05: Shell Unix Customizado (Background jobs e parsing avançado)', progress: 0, done: false },
+        { step: 14, phase: 'Fase 2: Sistema Operacional, Kernel e Processos', type: 'IMPACTO', name: 'PROJETO DE IMPACTO: ft_docker (Runtime do zero usando clone, namespaces, cgroups e OverlayFS)', progress: 0, done: false },
+        // Fase 3
+        { step: 15, phase: 'Fase 3: Concorrência e Persistência em Disco', type: '42', name: '42 (Rank 3): philosophers (Threads POSIX, mutex e prevenção de deadlocks)', progress: 0, done: false },
+        { step: 16, phase: 'Fase 3: Concorrência e Persistência em Disco', type: 'CSAPP', name: 'CSAPP Lab: Cache Lab (Hierarquia de memória, simulação de cache e cache misses)', progress: 0, done: false },
+        { step: 17, phase: 'Fase 3: Concorrência e Persistência em Disco', type: 'PROJ-BASE', name: 'Trilha Base - Projeto 04: Banco de Dados em Disco (Pager binário e introdução a páginas)', progress: 0, done: false },
+        { step: 18, phase: 'Fase 3: Concorrência e Persistência em Disco', type: 'IMPACTO', name: 'PROJETO DE IMPACTO: ft_sqlite (B+Tree em disco, paginação 4KB, cache LRU e WAL tolerante a falhas)', progress: 0, done: false },
+        // Fase 4
+        { step: 19, phase: 'Fase 4: Redes (Do Baixo Nível ao C10K)', type: '42', name: '42 (Rank 5): NetPractice (Roteamento e subnetting)', progress: 0, done: false },
+        { step: 20, phase: 'Fase 4: Redes (Do Baixo Nível ao C10K)', type: 'PROJ-BASE', name: 'Trilha Base - Projeto 03: Servidor HTTP & Sniffer RAW (+ Core em Go: POSIX Threads vs Goroutines)', progress: 0, done: false },
+        { step: 21, phase: 'Fase 4: Redes (Do Baixo Nível ao C10K)', type: 'CSAPP', name: 'CSAPP Lab: Proxy Lab (Proxy HTTP básico com threads/I/O)', progress: 0, done: false },
+        { step: 22, phase: 'Fase 4: Redes (Do Baixo Nível ao C10K)', type: 'IMPACTO', name: 'PROJETO DE IMPACTO: ft_tcpip (Pilha TCP/IP user-space via TUN/TAP: ARP, IPv4 e handshake TCP)', progress: 0, done: false },
+        { step: 23, phase: 'Fase 4: Redes (Do Baixo Nível ao C10K)', type: '42', name: '42 (Rank 5): webserv/ft_irc (Servidores non-blocking em C++)', progress: 0, done: false },
+        { step: 24, phase: 'Fase 4: Redes (Do Baixo Nível ao C10K)', type: 'IMPACTO', name: 'PROJETO DE IMPACTO: ft_nginx (Proxy reverso assíncrono com epoll, parsing zero-copy e C10K)', progress: 0, done: false },
+        // Fase 5
+        { step: 25, phase: 'Fase 5: Compiladores, Arquitetura e Eng. de Software', type: 'PROJ-BASE', name: 'Trilha Base - Projeto 06: Réplica Funcional do Git (Merkle trees, hashing SHA e compressão zlib)', progress: 0, done: false },
+        { step: 26, phase: 'Fase 5: Compiladores, Arquitetura e Eng. de Software', type: 'PROJ-BASE', name: 'Trilha Base - Projeto 07: Compilador & VM Básica (AST e geração de bytecode em Rust/C)', progress: 0, done: false },
+        { step: 27, phase: 'Fase 5: Compiladores, Arquitetura e Eng. de Software', type: 'IMPACTO', name: 'PROJETO DE IMPACTO: ft_vm (Linguagem própria, ISA custom, dispatch loop, GC Mark-and-Sweep e JIT x86_64)', progress: 0, done: false },
+        // Fase 6
+        { step: 28, phase: 'Fase 6: Sistemas Distribuídos e o Bare-Metal', type: '42', name: '42 (Rank 6): ft_transcendence (Full Stack / WebSockets + K3s/Minikube + OpenTelemetry/Prometheus/Jaeger)', progress: 0, done: false },
+        { step: 29, phase: 'Fase 6: Sistemas Distribuídos e o Bare-Metal', type: 'IMPACTO', name: 'PROJETO DE IMPACTO: ft_raft (Consenso distribuído em Go/Rust, eleição de líder e partição de rede)', progress: 0, done: false },
+        { step: 30, phase: 'Fase 6: Sistemas Distribuídos e o Bare-Metal', type: 'CHEFE-FINAL', name: 'Trilha Base - Projeto 08 (O Chefe Final): Sistema Operacional do Zero no QEMU (Bootloader x86, IDT/GDT, scheduler)', progress: 0, done: false }
+      ],
+      route42: [
+        // FASE 0
+        { id: '42-1', phase: 'FASE 0: O Ambiente (Shell & CLI)', kind: '42', name: 'Shell 00 (Permissões e Filesystem)', done: true },
+        { id: '42-2', phase: 'FASE 0: O Ambiente (Shell & CLI)', kind: '42', name: 'Shell 01 (Scripting e Environment)', done: true },
+        { id: '42-3', phase: 'FASE 0: O Ambiente (Shell & CLI)', kind: 'BOOTCAMP', name: '[BOOTCAMP] Git & Workflow Automation', done: true },
+        // FASE 1
+        { id: '42-4', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'C 00 (Sintaxe Básica)', done: true },
+        { id: '42-5', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'C 01 (Ponteiros e Aritmética)', done: true },
+        { id: '42-6', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'C 02 (Strings e Manipulação de Bytes)', done: true },
+        { id: '42-7', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'C 03 (Manipulação de Strings Avançada)', done: true },
+        { id: '42-8', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'C 04 (Parsing, Conversão e Endianness)', done: true },
+        { id: '42-9', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'C 05 (Matemática e Recursão)', done: true },
+        { id: '42-10', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'C 06 (Argumentos argc/argv)', done: true },
+        { id: '42-11', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: 'BOOTCAMP', name: '[BOOTCAMP] Pointers & Memory Layout (Stack vs Heap)', done: true },
+        { id: '42-12', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'C 07 (Alocação Dinâmica malloc/free)', done: true },
+        { id: '42-13', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'C 08 (Headers, Structs e Defines)', done: true },
+        { id: '42-14', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'C 09 (Makefiles e Bibliotecas)', done: true },
+        { id: '42-15', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'C 10 (File Descriptors e I/O)', done: true },
+        { id: '42-16', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'C 11 (Function Pointers e Callbacks)', done: true },
+        { id: '42-17', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'Piscine Reloaded (Revisão Técnica)', done: true },
+        { id: '42-18', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'Libft (Parte Obrigatória)', done: true },
+        { id: '42-19', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'C 12 (Listas Encadeadas)', done: false },
+        { id: '42-20', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'C 13 (Árvores Binárias)', done: false },
+        { id: '42-21', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: 'BOOTCAMP', name: '[BOOTCAMP] Estruturas de Dados Lineares (Lists/Vectors)', done: false },
+        { id: '42-22', phase: 'FASE 1: A Base de Aço (C e Memória)', kind: '42', name: 'Libft (Parte Bônus)', done: false },
+        // FASE 2
+        { id: '42-23', phase: 'FASE 2: Sistema e Algoritmos (Rank 1 & 2)', kind: '42', name: 'ft_printf (Variadic Functions)', done: false },
+        { id: '42-24', phase: 'FASE 2: Sistema e Algoritmos (Rank 1 & 2)', kind: '42', name: 'Get_next_line (Buffers Estáticos e FDs)', done: false },
+        { id: '42-25', phase: 'FASE 2: Sistema e Algoritmos (Rank 1 & 2)', kind: 'BOOTCAMP', name: '[BOOTCAMP] SysAdmin Basics (LVM, SSH, Permissions)', done: false },
+        { id: '42-26', phase: 'FASE 2: Sistema e Algoritmos (Rank 1 & 2)', kind: '42', name: 'Born2beroot (Virtualização e Linux)', done: false },
+        { id: '42-27', phase: 'FASE 2: Sistema e Algoritmos (Rank 1 & 2)', kind: 'BOOTCAMP', name: '[BOOTCAMP] Graphics & Math Basics (MiniLibX/Vetores)', done: false },
+        { id: '42-28', phase: 'FASE 2: Sistema e Algoritmos (Rank 1 & 2)', kind: '42', name: 'So_long / FdF / Fract-ol (Gráficos e Eventos)', done: false },
+        { id: '42-29', phase: 'FASE 2: Sistema e Algoritmos (Rank 1 & 2)', kind: 'BOOTCAMP', name: '[BOOTCAMP] Análise de Algoritmos (Big O & Sorts)', done: false },
+        { id: '42-30', phase: 'FASE 2: Sistema e Algoritmos (Rank 1 & 2)', kind: 'BOOTCAMP', name: '[BOOTCAMP] Abstract Data Types (Stacks & Queues)', done: false },
+        { id: '42-31', phase: 'FASE 2: Sistema e Algoritmos (Rank 1 & 2)', kind: '42', name: 'Push_swap (Complexidade Algorítmica)', done: false },
+        { id: '42-32', phase: 'FASE 2: Sistema e Algoritmos (Rank 1 & 2)', kind: 'BOOTCAMP', name: '[BOOTCAMP] Bitwise Operations (Máscaras e Binário)', done: false },
+        { id: '42-33', phase: 'FASE 2: Sistema e Algoritmos (Rank 1 & 2)', kind: '42', name: 'Minitalk (Sinais UNIX - SIGUSR)', done: false },
+        // FASE 3
+        { id: '42-34', phase: 'FASE 3: Arquitetura UNIX (Rank 3)', kind: 'BOOTCAMP', name: '[BOOTCAMP] Unix Processes (Fork, Pipe, Execve)', done: false },
+        { id: '42-35', phase: 'FASE 3: Arquitetura UNIX (Rank 3)', kind: '42', name: 'Pipex (Redirecionamento e Pipes)', done: false },
+        { id: '42-36', phase: 'FASE 3: Arquitetura UNIX (Rank 3)', kind: 'BOOTCAMP', name: '[BOOTCAMP] Parsers & AST (Lexers e Tokenização)', done: false },
+        { id: '42-37', phase: 'FASE 3: Arquitetura UNIX (Rank 3)', kind: '42', name: 'Minishell (Processos e Shell Architecture)', done: false },
+        { id: '42-38', phase: 'FASE 3: Arquitetura UNIX (Rank 3)', kind: 'BOOTCAMP', name: '[BOOTCAMP] Concorrência & Threads (Mutex/Semaphores)', done: false },
+        { id: '42-39', phase: 'FASE 3: Arquitetura UNIX (Rank 3)', kind: '42', name: 'Philosophers (Threads e Data Races)', done: false },
+        // FASE 4
+        { id: '42-40', phase: 'FASE 4: Orientação a Objetos (Rank 4)', kind: 'BOOTCAMP', name: '[BOOTCAMP] C++ Paradigm Shift (OOP Concepts)', done: false },
+        { id: '42-41', phase: 'FASE 4: Orientação a Objetos (Rank 4)', kind: '42', name: 'CPP Module 00 (Namespaces e Classes)', done: false },
+        { id: '42-42', phase: 'FASE 4: Orientação a Objetos (Rank 4)', kind: '42', name: 'CPP Module 01 (Alocação e Referências)', done: false },
+        { id: '42-43', phase: 'FASE 4: Orientação a Objetos (Rank 4)', kind: '42', name: 'CPP Module 02 (Polimorfismo Ad-hoc e Operadores)', done: false },
+        { id: '42-44', phase: 'FASE 4: Orientação a Objetos (Rank 4)', kind: '42', name: 'CPP Module 03 (Herança)', done: false },
+        { id: '42-45', phase: 'FASE 4: Orientação a Objetos (Rank 4)', kind: '42', name: 'CPP Module 04 (Subtipos e Interfaces)', done: false },
+        // FASE 5
+        { id: '42-46', phase: 'FASE 5: Advanced C++ & Infra (Rank 5)', kind: '42', name: 'CPP Module 05 (Exceptions)', done: false },
+        { id: '42-47', phase: 'FASE 5: Advanced C++ & Infra (Rank 5)', kind: '42', name: 'CPP Module 06 (Casting e RTTI)', done: false },
+        { id: '42-48', phase: 'FASE 5: Advanced C++ & Infra (Rank 5)', kind: '42', name: 'CPP Module 07 (Templates)', done: false },
+        { id: '42-49', phase: 'FASE 5: Advanced C++ & Infra (Rank 5)', kind: '42', name: 'CPP Module 08 (STL Containers & Algorithms)', done: false },
+        { id: '42-50', phase: 'FASE 5: Advanced C++ & Infra (Rank 5)', kind: '42', name: 'CPP Module 09 (STL Avançado)', done: false },
+        { id: '42-51', phase: 'FASE 5: Advanced C++ & Infra (Rank 5)', kind: 'BOOTCAMP', name: '[BOOTCAMP] Networking Fundamentals (TCP/IP)', done: false },
+        { id: '42-52', phase: 'FASE 5: Advanced C++ & Infra (Rank 5)', kind: '42', name: 'NetPractice (Roteamento e Subnetting)', done: false },
+        { id: '42-53', phase: 'FASE 5: Advanced C++ & Infra (Rank 5)', kind: 'BOOTCAMP', name: '[BOOTCAMP] I/O Multiplexing (Select/Poll/Epoll)', done: false },
+        { id: '42-54', phase: 'FASE 5: Advanced C++ & Infra (Rank 5)', kind: '42', name: 'Webserv/ft_irc (Servidores HTTP/IRC Non-blocking)', done: false },
+        { id: '42-55', phase: 'FASE 5: Advanced C++ & Infra (Rank 5)', kind: 'BOOTCAMP', name: '[BOOTCAMP] DevOps & Containerization', done: false },
+        { id: '42-56', phase: 'FASE 5: Advanced C++ & Infra (Rank 5)', kind: '42', name: 'Inception (Docker Orchestration)', done: false },
+        // FASE 6
+        { id: '42-57', phase: 'FASE 6: Engenharia Full Stack (Rank 6)', kind: 'BOOTCAMP', name: '[BOOTCAMP] Modern Web Stack (Frameworks/Auth/DB)', done: false },
+        { id: '42-58', phase: 'FASE 6: Engenharia Full Stack (Rank 6)', kind: '42', name: 'ft_transcendence (SPA, WebSockets e OAuth)', done: false }
+      ],
+      csappGates: [
+        { id: 'cs-1', title: 'Fase 1: Fundamentos de Bits', reading: 'Cap 1 (Tour) + Cap 2 (Inteiros e Floats)', readDone: true, labs: [{ name: 'Data Lab (Bitwise Puzzles)', done: true }], note: 'Bloqueio: Não avance ao Cap 3 sem zerar o Data Lab.' },
+        { id: 'cs-2', title: 'Fase 2: A Máquina (O Grande Filtro)', reading: 'Cap 3 (Assembly x86-64)', readDone: false, labs: [{ name: 'Bomb Lab (Reverse Eng GDB)', done: false }, { name: 'Attack Lab (Buffer Overflow / ROP)', done: false }], note: 'Onde a maioria desiste. Domine o GDB e o layout da stack.' },
+        { id: 'cs-3', title: 'Fase 3: Bifurcação de Arquitetura (Bypass Tático)', reading: 'Cap 4 (Processor Architecture)', readDone: false, bypassed: true, labs: [{ name: 'Arch Lab (HCL CPU Design)', done: false }], note: 'Otimização: Pule inicialmente se o foco for Software/Performance e volte no final.' },
+        { id: 'cs-4', title: 'Fase 4: Performance Real (O Ouro do Programador)', reading: 'Cap 5 (Otimização) + Cap 6 (Hierarquia de Memória/Cache)', readDone: false, labs: [{ name: 'Cache Lab (Simulador de Cache & Misses)', done: false }], note: 'Aqui você aprende por que seu código é lento.' },
+        { id: 'cs-5', title: 'Fase 5: Sistema Operacional (Kernel)', reading: 'Cap 7 (Linking) + Cap 8 (Exceções/Processos) + Cap 9 (Memória Virtual)', readDone: false, labs: [{ name: 'Shell Lab (Unix Shell)', done: false }, { name: 'Malloc Lab (Alocador Dinâmico)', done: false }], note: 'Malloc Lab é o exame mais difícil do curso.' },
+        { id: 'cs-6', title: 'Fase 6: Redes & Concorrência (Ano 2 / Ano 3)', reading: 'Cap 10 (System I/O) + Cap 11 (Network) + Cap 12 (Concurrency)', readDone: false, labs: [{ name: 'Proxy Lab (Concorrência e Sockets)', done: false }], note: 'Ponte direta para o ft_tcpip e Webserv.' }
+      ],
+      dsLevels: [
+        { level: 'Nível 0 - Fundamentos', year: 'Ano 1', items: [
+          { name: 'Array/vetor estático, string (array de chars)', done: true },
+          { name: 'Registro/struct, tupla', done: true },
+          { name: 'Lista de arrasto / array dinâmico (vector)', done: true }
+        ]},
+        { level: 'Nível 1 - Lineares Clássicas', year: 'Ano 1', items: [
+          { name: 'Lista ligada (simples, dupla, circular)', done: true },
+          { name: 'Pilha (stack)', done: true },
+          { name: 'Fila (queue), deque', done: false }
+        ]},
+        { level: 'Nível 2 - Utilitárias Essenciais', year: 'Ano 1', items: [
+          { name: 'Tabela hash / dicionário / set (aberta/fechada)', done: false },
+          { name: 'Heap binário / priority queue', done: false },
+          { name: 'Multiconjuntos (bag/multiset)', done: false }
+        ]},
+        { level: 'Nível 3 - Árvores e Básicos de Desempenho', year: 'Ano 1', items: [
+          { name: 'Árvore binária e BST não balanceada', done: false },
+          { name: 'Trie (prefix tree), Radix/Patricia', done: false },
+          { name: 'DSU / Union-Find (disjoint set)', done: false },
+          { name: 'Skip list', done: false }
+        ]},
+        { level: 'Nível 4 - Árvores Balanceadas', year: 'Ano 1', items: [
+          { name: 'AVL, Red-Black, 2-3, 2-3-4', done: false },
+          { name: 'Treap, Splay (auto-ajuste)', done: false },
+          { name: 'Order-Statistic Tree (BST + seleção por ordem)', done: false }
+        ]},
+        { level: 'Nível 5 - Heaps e Árvores de Intervalo', year: 'Ano 2', items: [
+          { name: 'Fenwick / BIT (Binary Indexed Tree)', done: false },
+          { name: 'Segment Tree (básica)', done: false },
+          { name: 'Interval Tree, Segment Tree com coord. comprimidas', done: false },
+          { name: 'Binomial heap, Pairing heap', done: false }
+        ]},
+        { level: 'Nível 6 - Grafos (Representações e Auxiliares)', year: 'Ano 2', items: [
+          { name: 'Lista de adjacência, matriz de adjacência, CSR/CSC', done: false },
+          { name: 'Estruturas p/ caminhos mínimos (d-ary heap)', done: false },
+          { name: 'Euler tour + RMQ (para LCA simples)', done: false }
+        ]},
+        { level: 'Nível 7 - Árvores e Estruturas em Disco', year: 'Ano 2', items: [
+          { name: 'B-Tree, B+-Tree, B*-Tree, 2-3-B-Tree', done: false },
+          { name: 'Árvores para bancos de dados/FS (índices on-disk)', done: false }
+        ]},
+        { level: 'Nível 8 - Espaciais e Geométricas', year: 'Ano 3', items: [
+          { name: 'k-d tree, Quadtree, Octree', done: false },
+          { name: 'R-Tree / R*-Tree (dados espaciais)', done: false },
+          { name: 'Range tree, Interval Skip List', done: false },
+          { name: 'DCEL (estruturas de malha/planar)', done: false }
+        ]},
+        { level: 'Nível 9 - Texto e Compressão de Informação', year: 'Ano 3', items: [
+          { name: 'Suffix Array + LCP, Suffix Tree', done: false },
+          { name: 'Suffix Automaton (SAM)', done: false },
+          { name: 'Wavelet Tree / Wavelet Matrix', done: false },
+          { name: 'Bitvectors com rank/select, estruturas sucintas', done: false }
+        ]},
+        { level: 'Nível 10 - Segment/Range Avançado e Persistência', year: 'Ano 3', items: [
+          { name: 'Segment Tree com lazy propagation', done: false },
+          { name: 'Segment Tree persistente, Fenwick multidimensional', done: false },
+          { name: 'Árvores de ordem/persistentes (Treap persistente)', done: false }
+        ]},
+        { level: 'Nível 11 - Árvores Dinâmicas para Grafos', year: 'Ano 4', items: [
+          { name: 'Link-Cut Trees, Euler Tour Trees, Top Trees', done: false },
+          { name: 'ETT + estruturas para conectividade dinâmica', done: false }
+        ]},
+        { level: 'Nível 12 - Dicionários Super-Rápidos (Inteiros)', year: 'Ano 4', items: [
+          { name: 'van Emde Boas (vEB) tree', done: false },
+          { name: 'x-fast trie, y-fast trie', done: false },
+          { name: 'Fusion tree', done: false }
+        ]},
+        { level: 'Nível 13 - Probabilísticas e Streaming', year: 'Ano 4', items: [
+          { name: 'Bloom Filter, Counting Bloom, Cuckoo Filter', done: false },
+          { name: 'Count-Min Sketch, HyperLogLog, Reservoir Sampling', done: false },
+          { name: 'MinHash / LSH (similaridade)', done: false }
+        ]},
+        { level: 'Nível 14 - Edição de Texto / Sequências Mutáveis', year: 'Ano 4', items: [
+          { name: 'Rope, Gap Buffer, Piece Table, Finger Tree', done: false }
+        ]},
+        { level: 'Nível 15 - Concorrentes e de Alto Desempenho', year: 'Ano 4', items: [
+          { name: 'Filas/pilhas lock-free, hash map concorrente', done: false },
+          { name: 'LSM-Tree (SSTables), Bε-Tree, BW-Tree', done: false },
+          { name: 'Estruturas copy-on-write / persistentes em produção', done: false }
+        ]}
+      ],
+      books: [
+        { id: 'b-csapp', year: 'Ano 1 & 2', title: 'CS:APP (Computer Systems: A Programmer\'s Perspective)', read: 2, total: 12 },
+        { id: 'b-ostep', year: 'Ano 1', title: 'Operating Systems: Three Easy Pieces (OSTEP)', read: 14, total: 50 },
+        { id: 'b-llp', year: 'Ano 1', title: 'Low-Level Programming (C, ASM & Intel 64 - Igor Zhirkov)', read: 3, total: 17 },
+        { id: 'b-tlpi', year: 'Ano 2', title: 'The Linux Programming Interface (TLPI)', read: 8, total: 64 },
+        { id: 'b-kurose', year: 'Ano 2', title: 'Computer Networking: A Top-Down Approach (Kurose)', read: 0, total: 8 },
+        { id: 'b-concgo', year: 'Ano 2', title: 'Concurrency in Go (Katherine Cox-Buday)', read: 0, total: 6 },
+        { id: 'b-tanenbaum-mos', year: 'Ano 3', title: 'Sistemas Operacionais Modernos 5ª Ed (Tanenbaum)', read: 3, total: 13 },
+        { id: 'b-tanenbaum-minix', year: 'Ano 3 & 4', title: 'Sistemas Operacionais: Projeto e Implementação (MINIX 3)', read: 1, total: 6 },
+        { id: 'b-dragon', year: 'Ano 3', title: 'Compilers: Principles, Techniques, and Tools (Dragon Book)', read: 0, total: 12 },
+        { id: 'b-skiena', year: 'Ano 3', title: 'The Algorithm Design Manual 3rd Ed (Skiena)', read: 0, total: 19 },
+        { id: 'b-rust', year: 'Ano 3', title: 'The Rust Programming Language (Rust Book)', read: 0, total: 21 },
+        { id: 'b-ddia', year: 'Ano 4', title: 'Designing Data-Intensive Applications (DDIA - Kleppmann)', read: 0, total: 12 },
+        { id: 'b-hennessy', year: 'Ano 4', title: 'Computer Architecture: A Quantitative Approach (6th Ed)', read: 0, total: 7 },
+        { id: 'b-ddd', year: 'Ano 4', title: 'Domain-Driven Design (DDD - Eric Evans)', read: 0, total: 17 },
+        { id: 'b-k8s', year: 'Ano 4', title: 'Kubernetes in Action (Marko Luksa)', read: 0, total: 18 },
+        { id: 'b-sysperf', year: 'Ano 5', title: 'Systems Performance: Enterprise and the Cloud (Brendan Gregg)', read: 0, total: 16 },
+        { id: 'b-sre', year: 'Ano 5', title: 'Site Reliability Engineering (Google SRE Book)', read: 0, total: 34 }
+      ],
+      yearsPlan: [
+        {
+          year: 'Ano 1: O Metal, C e Estruturas de Dados Fundamentais',
+          focus: 'CS:APP (caps. 1 a 6), OSTEP (Virtualização) e Low-Level Programming.',
+          curriculum: 'Fases 0, 1 e 2 do Roteiro 42 (Piscina, Libft, ft_printf, get_next_line, Born2beroot, Push_swap e Minitalk).',
+          ds: 'Níveis 0 a 4 (Arrays, Listas, Pilhas, Filas, Hash, Heaps, Árvores BST/AVL/Red-Black).',
+          labs: 'Data Lab, Bomb Lab, Attack Lab (+ Malloc Lab na sequência de projetos).',
+          projects: 'Projeto 01 (Compressor Huffman), Projeto 02 (Alocador malloc/free) e ft_redis.'
+        },
+        {
+          year: 'Ano 2: Arquitetura UNIX, Concorrência e Redes de Baixo Nível',
+          focus: 'The Linux Programming Interface (TLPI), CS:APP (caps. 8 a 12), Redes (Kurose) e Concurrency in Go.',
+          curriculum: 'Fases 3 e 4 do Roteiro 42 (Pipex, Minishell, Philosophers, C++ Modules 00 a 04).',
+          ds: 'Níveis 5 a 7 (Fenwick/Segment Trees, Grafos e B-Trees).',
+          labs: 'Cache Lab, Shell Lab, Malloc Lab.',
+          projects: 'Projeto 03 (Servidor HTTP + Sniffer RAW + Core em Go), Projeto 05 (Shell Unix Customizado) e ft_docker.'
+        },
+        {
+          year: 'Ano 3: Sistemas Operacionais, Compiladores e Armazenamento em Disco',
+          focus: 'Sistemas Operacionais Modernos (Tanenbaum), Compilers (Dragon Book), Algorithm Design Manual (Skiena) e The Rust Book.',
+          curriculum: 'Fase 5 do Roteiro 42 (C++ Modules 05 a 09, NetPractice, Webserv/ft_irc, Inception).',
+          ds: 'Níveis 8 a 10 (Espaciais k-d/Quadtrees, Suffix Arrays, Range Trees e persistência B-Trees/B+-Trees).',
+          labs: 'Proxy Lab.',
+          projects: 'Projeto 04 (DB em Disco), ft_sqlite, Projeto 06 (Réplica do Git), Projeto 07 (Compilador & VM em Rust) e ft_vm (JIT x86_64).'
+        },
+        {
+          year: 'Ano 4: Sistemas Distribuídos, Escala e Ecossistema Cloud Native',
+          focus: 'DDIA (Kleppmann), Computer Architecture (Hennessy & Patterson), DDD, Kubernetes in Action + Docs etcd/Kafka.',
+          curriculum: 'Fase 6 do Roteiro 42 (ft_transcendence) + consenso distribuído.',
+          ds: 'Níveis 11 a 15 (Link-Cut, vEB, Probabilísticas Bloom/HyperLogLog, Rope, Lock-free e LSM-Trees).',
+          labs: 'Orquestração K3s/Minikube + Raft.',
+          projects: 'Projeto 08 (O Chefe Final: SO do Zero no QEMU), ft_raft (Consenso Distribuído), ft_tcpip e ft_nginx.'
+        },
+        {
+          year: 'Ano 5: Engenharia de Performance, SRE, System Design e Preparação FAANG',
+          focus: 'Google SRE Book (SLOs/SLIs) e Systems Performance (Brendan Gregg).',
+          curriculum: 'LeetCode intensivo (Grafos, DP, Treaps), Simulações de System Design Global (CAP/PACELC, Sharding).',
+          ds: 'Revisão competitiva e aplicação de estruturas de Níveis 0 a 15 sob pressão de tempo.',
+          labs: 'Instrumentação OpenTelemetry, Prometheus, Jaeger/Grafana e profiling com perf.',
+          projects: 'Documentação em inglês dos 8 projetos + ft_*, benchmarks de kernel/memória, Open-Source e Mock Interviews.'
+        }
+      ]
+    };
+
+    let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultState;
+    let chartInstance = null;
+
+    // Deep Work Timer
+    let timerSeconds = 3600;
+    let timerInterval = null;
+    function toggleTimer() {
+      const btn = document.getElementById('timerBtn');
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        btn.textContent = 'Retomar';
+      } else {
+        btn.textContent = 'Pausar';
+        timerInterval = setInterval(() => {
+          if (timerSeconds > 0) {
+            timerSeconds--;
+            const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+            const s = String(timerSeconds % 60).padStart(2, '0');
+            document.getElementById('timerDisplay').textContent = `${m}:${s}`;
+          } else {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            btn.textContent = 'Iniciar';
+            alert('Bloco de Deep Work (60 min) concluído!');
+          }
+        }, 1000);
+      }
+    }
+    function resetTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerSeconds = 3600;
+      document.getElementById('timerDisplay').textContent = '60:00';
+      document.getElementById('timerBtn').textContent = 'Iniciar';
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      render();
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.className = 'tab-btn bg-zinc-900 hover:bg-zinc-800 text-zinc-300 px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition';
+      });
+      document.getElementById('btn-' + tabId).className = 'tab-btn bg-emerald-600 text-white px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition';
+    }
+
+    function calculateStreak(daysArray) {
+      let cur = 0, max = 0;
+      for (const d of daysArray) {
+        if (d) { cur++; if (cur > max) max = cur; }
+        else cur = 0;
+      }
+      return max;
+    }
+
+    // Handlers
+    function toggleDay(id, dayIdx) {
+      const h = state.habits.find(x => x.id === id);
+      if (h) { h.days[dayIdx] = !h.days[dayIdx]; saveState(); }
+    }
+    function addHabit() {
+      const input = document.getElementById('habitInput');
+      if (!input.value.trim()) return;
+      state.habits.push({ id: Date.now(), name: input.value.trim(), days: [false,false,false,false,false,false,false] });
+      input.value = '';
+      saveState();
+    }
+    function removeHabit(id) {
+      state.habits = state.habits.filter(x => x.id !== id);
+      saveState();
+    }
+    function resetWeek() {
+      state.habits.forEach(h => h.days = [false,false,false,false,false,false,false]);
+      saveState();
+    }
+
+    function toggleMasterStep(stepNum) {
+      const s = state.masterSteps.find(x => x.step === stepNum);
+      if (s) {
+        s.done = !s.done;
+        s.progress = s.done ? 100 : 0;
+        saveState();
+      }
+    }
+    function updateMasterProgress(stepNum, val) {
+      const s = state.masterSteps.find(x => x.step === stepNum);
+      if (s) {
+        s.progress = Number(val);
+        s.done = s.progress === 100;
+        saveState();
+      }
+    }
+
+    function toggle42(id) {
+      const item = state.route42.find(x => x.id === id);
+      if (item) { item.done = !item.done; saveState(); }
+    }
+
+    function toggleCsappRead(id) {
+      const g = state.csappGates.find(x => x.id === id);
+      if (g) { g.readDone = !g.readDone; saveState(); }
+    }
+    function toggleCsappLab(id, labIdx) {
+      const g = state.csappGates.find(x => x.id === id);
+      if (g) { g.labs[labIdx].done = !g.labs[labIdx].done; saveState(); }
+    }
+    function toggleCsappBypass(id) {
+      const g = state.csappGates.find(x => x.id === id);
+      if (g) { g.bypassed = !g.bypassed; saveState(); }
+    }
+
+    function toggleDs(lvlIdx, itemIdx) {
+      state.dsLevels[lvlIdx].items[itemIdx].done = !state.dsLevels[lvlIdx].items[itemIdx].done;
+      saveState();
+    }
+
+    function updateBook(id, delta) {
+      const b = state.books.find(x => x.id === id);
+      if (b) {
+        b.read = Math.max(0, Math.min(b.total, b.read + delta));
+        saveState();
+      }
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+      const a = document.createElement('a');
+      a.setAttribute("href", dataStr);
+      a.setAttribute("download", "50_anos_em_5_backup.json");
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          state = JSON.parse(e.target.result);
+          saveState();
+        } catch (err) {
+          alert('Arquivo JSON inválido.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetAll() {
+      if (confirm('Deseja restaurar o painel para a configuração padrão?')) {
+        state = JSON.parse(JSON.stringify(defaultState));
+        saveState();
+      }
+    }
+
+    function render() {
+      // 1. Render Weekly Study Habits
+      const habitTbody = document.getElementById('habitList');
+      habitTbody.innerHTML = '';
+      let weeklyDoneCount = 0;
+
+      state.habits.forEach(h => {
+        const streak = calculateStreak(h.days);
+        weeklyDoneCount += h.days.filter(Boolean).length;
+        const cells = h.days.map((d, i) => `
+          <td class="py-2 px-2 text-center">
+            <input type="checkbox" ${d ? 'checked' : ''} onchange="toggleDay(${h.id}, ${i})" class="w-4 h-4 rounded cursor-pointer" />
+          </td>
+        `).join('');
+
+        habitTbody.innerHTML += `
+          <tr class="hover:bg-zinc-800/30 transition">
+            <td class="py-2 px-2 font-medium text-zinc-200">${h.name}</td>
+            ${cells}
+            <td class="py-2 px-2 text-center font-mono text-xs text-amber-400 font-semibold">${streak}d</td>
+            <td class="py-2 px-1 text-right">
+              <button onclick="removeHabit(${h.id})" class="text-zinc-500 hover:text-red-400 text-xs">✕</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      // 2. Render Tab 1: Master 30 Steps grouped by Phase
+      const masterContainer = document.getElementById('tab-master');
+      masterContainer.innerHTML = '';
+      const phasesMaster = [...new Set(state.masterSteps.map(s => s.phase))];
+      let activeStepFound = null;
+
+      phasesMaster.forEach(phaseName => {
+        const steps = state.masterSteps.filter(s => s.phase === phaseName);
+        const doneInPhase = steps.filter(s => s.done).length;
+
+        const stepsHtml = steps.map(s => {
+          if (!s.done && !activeStepFound) activeStepFound = s;
+          const isCurrent = activeStepFound && activeStepFound.step === s.step;
+          const badgeColors = {
+            '42': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+            'CSAPP': 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+            'PROJ-BASE': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+            'IMPACTO': 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+            'CHEFE-FINAL': 'bg-red-500/10 text-red-400 border-red-500/30'
+          };
+
+          return `
+            <div class="p-3 rounded-lg border transition ${isCurrent ? 'bg-emerald-950/20 border-emerald-500/50' : 'bg-zinc-900/70 border-zinc-800/80'}">
+              <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                <label class="flex items-start md:items-center gap-2.5 cursor-pointer">
+                  <input type="checkbox" ${s.done ? 'checked' : ''} onchange="toggleMasterStep(${s.step})" class="mt-0.5 md:mt-0 w-4 h-4 rounded" />
+                  <span class="font-mono text-xs text-zinc-400">#${String(s.step).padStart(2, '0')}</span>
+                  <span class="px-1.5 py-0.5 text-[10px] font-mono border rounded ${badgeColors[s.type]}">${s.type}</span>
+                  <span class="text-xs md:text-sm font-medium ${s.done ? 'line-through text-zinc-500' : 'text-zinc-100'}">${s.name}</span>
+                </label>
+                <div class="flex items-center gap-2 self-end md:self-center">
+                  <input type="range" min="0" max="100" step="10" value="${s.progress}" onchange="updateMasterProgress(${s.step}, this.value)" class="w-24 accent-emerald-500 h-1.5 bg-zinc-800 rounded cursor-pointer" />
+                  <span class="font-mono text-xs text-emerald-400 w-9 text-right">${s.progress}%</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        masterContainer.innerHTML += `
+          <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-4">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-sm font-bold text-zinc-200 font-mono">${phaseName}</h3>
+              <span class="text-xs font-mono text-zinc-400">${doneInPhase} / ${steps.length} concluídos</span>
+            </div>
+            <div class="space-y-2">${stepsHtml}</div>
+          </div>
+        `;
+      });
+
+      // 3. Render Tab 2: 42 & Bootcamps
+      const container42 = document.getElementById('tab-42');
+      container42.innerHTML = '';
+      const phases42 = [...new Set(state.route42.map(x => x.phase))];
+      let next42Found = state.route42.find(x => !x.done);
+
+      phases42.forEach(pName => {
+        const items = state.route42.filter(x => x.phase === pName);
+        const doneCount = items.filter(x => x.done).length;
+        const listHtml = items.map(item => `
+          <label class="flex items-center justify-between bg-zinc-900 border border-zinc-800/80 px-3 py-2 rounded-lg cursor-pointer hover:border-zinc-700 transition">
+            <div class="flex items-center gap-2.5">
+              <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggle42('${item.id}')" class="w-3.5 h-3.5 rounded" />
+              <span class="px-1.5 py-0.5 text-[10px] font-mono rounded border ${item.kind === 'BOOTCAMP' ? 'bg-amber-500/10 text-amber-300 border-amber-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}">${item.kind}</span>
+              <span class="text-xs ${item.done ? 'line-through text-zinc-500' : 'text-zinc-200'}">${item.name}</span>
+            </div>
+          </label>
+        `).join('');
+
+        container42.innerHTML += `
+          <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-4">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-sm font-bold text-zinc-200 font-mono">${pName}</h3>
+              <span class="text-xs font-mono text-blue-400">${doneCount} / ${items.length}</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">${listHtml}</div>
+          </div>
+        `;
+      });
+
+      // 4. Render Tab 3: CS:APP Protocol
+      const csappContainer = document.getElementById('tab-csapp');
+      csappContainer.innerHTML = '';
+      let nextCsappFound = null;
+
+      state.csappGates.forEach(g => {
+        const allLabsDone = g.labs.every(l => l.done);
+        const gateCompleted = (g.readDone && allLabsDone) || g.bypassed;
+        if (!gateCompleted && !nextCsappFound) nextCsappFound = g;
+
+        const labsHtml = g.labs.map((l, idx) => `
+          <label class="flex items-center gap-2 bg-zinc-950 border border-zinc-800 px-3 py-2 rounded cursor-pointer">
+            <input type="checkbox" ${l.done ? 'checked' : ''} onchange="toggleCsappLab('${g.id}', ${idx})" class="w-4 h-4 rounded" />
+            <span class="text-xs font-mono text-purple-300">[LAB GATE]</span>
+            <span class="text-xs ${l.done ? 'line-through text-zinc-500' : 'text-zinc-200'}">${l.name}</span>
+          </label>
+        `).join('');
+
+        const bypassBtn = g.id === 'cs-3' ? `
+          <button onclick="toggleCsappBypass('${g.id}')" class="text-xs font-mono px-2.5 py-1 rounded border ${g.bypassed ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-zinc-800 text-zinc-400 border-zinc-700'}">
+            ${g.bypassed ? '✓ Bypass Tático Ativo (Pulado)' : 'Ativar Bypass Tático'}
+          </button>
+        ` : '';
+
+        csappContainer.innerHTML += `
+          <div class="bg-zinc-900/50 border ${gateCompleted ? 'border-zinc-800' : 'border-purple-500/40'} rounded-xl p-4">
+            <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 text-xs font-mono rounded ${gateCompleted ? 'bg-emerald-500/10 text-emerald-400' : 'bg-purple-500/10 text-purple-400'}">${gateCompleted ? 'LIBERADO' : 'TRAVA ATIVA'}</span>
+                <h3 class="text-sm font-bold text-zinc-100">${g.title}</h3>
+              </div>
+              ${bypassBtn}
+            </div>
+            <p class="text-xs text-zinc-400 mb-3">${g.note}</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <label class="flex items-center gap-2 bg-zinc-950 border border-zinc-800 px-3 py-2 rounded cursor-pointer">
+                <input type="checkbox" ${g.readDone ? 'checked' : ''} onchange="toggleCsappRead('${g.id}')" class="w-4 h-4 rounded" />
+                <span class="text-xs font-mono text-blue-400">[TEORIA]</span>
+                <span class="text-xs ${g.readDone ? 'line-through text-zinc-500' : 'text-zinc-200'}">${g.reading}</span>
+              </label>
+              ${labsHtml}
+            </div>
+          </div>
+        `;
+      });
+
+      // 5. Render Tab 4: Data Structures (Levels 0-15)
+      const dsContainer = document.getElementById('tab-ds');
+      dsContainer.innerHTML = '';
+      let totalDsDone = 0, totalDsCount = 0;
+      let nextDsFound = null;
+
+      state.dsLevels.forEach((lvl, lIdx) => {
+        const doneInLvl = lvl.items.filter(i => i.done).length;
+        totalDsDone += doneInLvl;
+        totalDsCount += lvl.items.length;
+
+        const itemsHtml = lvl.items.map((it, iIdx) => {
+          if (!it.done && !nextDsFound) nextDsFound = { level: lvl.level, name: it.name };
+          return `
+            <label class="flex items-start gap-2 cursor-pointer py-1">
+              <input type="checkbox" ${it.done ? 'checked' : ''} onchange="toggleDs(${lIdx}, ${iIdx})" class="mt-0.5 w-3.5 h-3.5 rounded" />
+              <span class="text-xs ${it.done ? 'line-through text-zinc-500' : 'text-zinc-300'}">${it.name}</span>
+            </label>
+          `;
+        }).join('');
+
+        dsContainer.innerHTML += `
+          <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-xs font-bold text-zinc-200">${lvl.level}</span>
+                <span class="px-1.5 py-0.5 text-[10px] font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded">${lvl.year}</span>
+              </div>
+              <div class="divide-y divide-zinc-800/50">${itemsHtml}</div>
+            </div>
+            <div class="mt-3 pt-2 border-t border-zinc-800/80 flex justify-between text-[11px] font-mono text-zinc-400">
+              <span>Domínio do Nível</span>
+              <span>${doneInLvl}/${lvl.items.length}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      // 6. Render Tab 5: Books (17 Books)
+      const booksContainer = document.getElementById('tab-books');
+      booksContainer.innerHTML = '';
+      let totalChaptersRead = 0, totalChaptersAll = 0;
+
+      state.books.forEach(b => {
+        totalChaptersRead += b.read;
+        totalChaptersAll += b.total;
+        const pct = Math.round((b.read / b.total) * 100);
+
+        booksContainer.innerHTML += `
+          <div class="bg-zinc-900/50 border border-zinc-800 p-4 rounded-xl flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center mb-1.5">
+                <span class="px-2 py-0.5 text-[10px] font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded">${b.year}</span>
+                <span class="font-mono text-xs text-cyan-400">${b.read} / ${b.total} caps (${pct}%)</span>
+              </div>
+              <h4 class="text-xs md:text-sm font-semibold text-zinc-100 mb-3">${b.title}</h4>
+            </div>
+            <div>
+              <div class="w-full bg-zinc-800 h-2 rounded-full overflow-hidden mb-3">
+                <div class="bg-cyan-500 h-full transition-all" style="width: ${pct}%"></div>
+              </div>
+              <div class="flex justify-end gap-1.5">
+                <button onclick="updateBook('${b.id}', -1)" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2.5 py-1 rounded text-xs font-mono">-1 cap</button>
+                <button onclick="updateBook('${b.id}', 1)" class="bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 px-2.5 py-1 rounded text-xs font-mono">+1 cap</button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      // 7. Render Tab 6: 5-Year Macro Plan
+      const yearsContainer = document.getElementById('tab-years');
+      yearsContainer.innerHTML = '';
+      state.yearsPlan.forEach(y => {
+        yearsContainer.innerHTML += `
+          <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5">
+            <h3 class="text-base font-bold text-emerald-400 mb-3 font-mono">${y.year}</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+              <div class="bg-zinc-950/60 border border-zinc-800/80 p-3 rounded-lg">
+                <span class="font-mono text-[10px] text-cyan-400 uppercase block mb-1">Foco Teórico</span>
+                <p class="text-zinc-300">${y.focus}</p>
+              </div>
+              <div class="bg-zinc-950/60 border border-zinc-800/80 p-3 rounded-lg">
+                <span class="font-mono text-[10px] text-blue-400 uppercase block mb-1">Currículo & Bootcamps</span>
+                <p class="text-zinc-300">${y.curriculum}</p>
+              </div>
+              <div class="bg-zinc-950/60 border border-zinc-800/80 p-3 rounded-lg">
+                <span class="font-mono text-[10px] text-amber-400 uppercase block mb-1">Estruturas de Dados</span>
+                <p class="text-zinc-300">${y.ds}</p>
+              </div>
+              <div class="bg-zinc-950/60 border border-zinc-800/80 p-3 rounded-lg">
+                <span class="font-mono text-[10px] text-purple-400 uppercase block mb-1">Labs & Infra</span>
+                <p class="text-zinc-300">${y.labs}</p>
+              </div>
+              <div class="bg-zinc-950/60 border border-zinc-800/80 p-3 rounded-lg">
+                <span class="font-mono text-[10px] text-emerald-400 uppercase block mb-1">Projetos Práticos</span>
+                <p class="text-zinc-300">${y.projects}</p>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      // Update Next Action Engine
+      document.getElementById('nextMasterStep').textContent = activeStepFound ? `#${activeStepFound.step} ${activeStepFound.name}` : 'Todos os 30 passos concluídos!';
+      document.getElementById('nextMasterPhase').textContent = activeStepFound ? activeStepFound.phase : '100% Completo';
+      document.getElementById('next42Item').textContent = next42Found ? next42Found.name : 'Common Core + Bootcamps Zerados!';
+      document.getElementById('next42Phase').textContent = next42Found ? next42Found.phase : 'Rank 6 Completo';
+      document.getElementById('nextCsappGate').textContent = nextCsappFound ? nextCsappFound.title : 'Protocolo CS:APP Zerado!';
+      document.getElementById('nextCsappStatus').textContent = nextCsappFound ? `Leitura: ${nextCsappFound.reading}` : 'Todos os Labs concluídos';
+      document.getElementById('nextDsItem').textContent = nextDsFound ? nextDsFound.name : 'Níveis 0 a 15 dominados!';
+      document.getElementById('nextDsLevel').textContent = nextDsFound ? nextDsFound.level : 'Completo';
+
+      // Update KPIs
+      const totalWeeklyPossible = state.habits.length * 7;
+      const weeklyRate = totalWeeklyPossible > 0 ? Math.round((weeklyDoneCount / totalWeeklyPossible) * 100) : 0;
+      const masterDone = state.masterSteps.filter(s => s.done).length;
+      const done42 = state.route42.filter(x => x.done).length;
+      const allCsappLabs = state.csappGates.flatMap(g => g.labs);
+      const csappLabsDone = allCsappLabs.filter(l => l.done).length;
+
+      document.getElementById('kpiWeeklyRate').textContent = `${weeklyRate}%`;
+      document.getElementById('kpiMaster').textContent = `${masterDone} / ${state.masterSteps.length}`;
+      document.getElementById('kpi42').textContent = `${done42} / ${state.route42.length}`;
+      document.getElementById('kpiCsapp').textContent = `${csappLabsDone} / ${allCsappLabs.length}`;
+      document.getElementById('kpiDs').textContent = `${totalDsDone} / ${totalDsCount}`;
+      document.getElementById('kpiBooks').textContent = `${totalChaptersRead} / ${totalChaptersAll}`;
+
+      // Global Progress Calculation
+      const totalItemsGlobal = state.masterSteps.length + state.route42.length + allCsappLabs.length + totalDsCount + totalChaptersAll;
+      const totalDoneGlobal = masterDone + done42 + csappLabsDone + totalDsDone + totalChaptersRead;
+      const globalPct = Math.round((totalDoneGlobal / totalItemsGlobal) * 100);
+      document.getElementById('globalProgressBadge').textContent = `Progresso Global (5 Anos): ${globalPct}%`;
+
+      // Update Chart
+      const dailyPercentages = DAYS.map((_, idx) => {
+        if (!state.habits.length) return 0;
+        const done = state.habits.filter(h => h.days[idx]).length;
+        return Math.round((done / state.habits.length) * 100);
+      });
+
+      const ctx = document.getElementById('weeklyChart').getContext('2d');
+      if (chartInstance) {
+        chartInstance.data.datasets[0].data = dailyPercentages;
+        chartInstance.update();
+      } else {
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: DAYS,
+            datasets: [{
+              data: dailyPercentages,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+              borderWidth: 2,
+              pointBackgroundColor: '#10b981',
+              pointRadius: 4,
+              fill: true,
+              tension: 0.35
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: true, max: 100, grid: { color: '#27272a' }, ticks: { color: '#a1a1aa', callback: v => v + '%' } },
+              x: { grid: { display: false }, ticks: { color: '#a1a1aa' } }
+            }
+          }
+        });
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
