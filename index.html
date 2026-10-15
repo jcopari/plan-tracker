@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>50 Anos em 5 | Plan Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { background-color: #09090b; color: #f4f4f5; font-family: system-ui, -apple-system, sans-serif; }
+    input[type="checkbox"] { accent-color: #10b981; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #18181b; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 max-w-[1440px] mx-auto">
+
+  <!-- TOP HEADER -->
+  <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 border-b border-zinc-800 pb-5">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <span class="px-2.5 py-0.5 text-xs font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded">50 ANOS EM 5</span>
+        <h1 class="text-xl md:text-2xl font-bold tracking-tight text-zinc-100">Systems Engineering Master Tracker</h1>
+      </div>
+      <p class="text-xs md:text-sm text-zinc-400 mt-1">Roteiro 42 + Bootcamps • Protocolo CS:APP • Estruturas de Dados (0–15) • 17 Livros • 30 Passos</p>
+    </div>
+
+    <!-- Deep Work Timer & Controls -->
+    <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-between lg:justify-end">
+      <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg">
+        <span class="text-xs font-mono text-zinc-400">DEEP WORK:</span>
+        <span id="timerDisplay" class="font-mono text-sm font-bold text-emerald-400">60:00</span>
+        <button onclick="toggleTimer()" id="timerBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-0.5 rounded text-xs font-medium transition">Iniciar</button>
+        <button onclick="resetTimer()" class="text-zinc-400 hover:text-zinc-200 text-xs px-1">↺</button>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="exportData()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-lg text-xs font-mono transition">Exportar JSON</button>
+        <label class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-lg text-xs font-mono transition cursor-pointer">
+          Importar
+          <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)" />
+        </label>
+        <button onclick="resetAll()" class="bg-zinc-900 hover:bg-red-950/60 text-zinc-400 hover:text-red-400 border border-zinc-800 px-3 py-1.5 rounded-lg text-xs font-mono transition">Reset</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- NEXT ACTION ENGINE -->
+  <section class="bg-gradient-to-r from-emerald-950/30 via-zinc-900/80 to-zinc-900/80 border border-emerald-500/30 rounded-xl p-4 mb-6">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <h2 class="text-xs font-mono uppercase tracking-wider text-emerald-400 font-semibold">Foco de Execução Imediata</h2>
+      </div>
+      <span id="globalProgressBadge" class="text-xs font-mono text-zinc-300 bg-zinc-800/80 px-2.5 py-0.5 rounded">Progresso Global: 0%</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div class="bg-zinc-950/70 border border-zinc-800/80 p-3 rounded-lg">
+        <span class="text-[11px] font-mono text-zinc-400 uppercase">1. Trilha Mestra (Passo Atual)</span>
+        <p id="nextMasterStep" class="text-sm font-semibold text-zinc-100 mt-1 truncate">-</p>
+        <p id="nextMasterPhase" class="text-[11px] text-emerald-400 font-mono mt-0.5">-</p>
+      </div>
+      <div class="bg-zinc-950/70 border border-zinc-800/80 p-3 rounded-lg">
+        <span class="text-[11px] font-mono text-zinc-400 uppercase">2. Roteiro 42 / Bootcamp</span>
+        <p id="next42Item" class="text-sm font-semibold text-zinc-100 mt-1 truncate">-</p>
+        <p id="next42Phase" class="text-[11px] text-blue-400 font-mono mt-0.5">-</p>
+      </div>
+      <div class="bg-zinc-950/70 border border-zinc-800/80 p-3 rounded-lg">
+        <span class="text-[11px] font-mono text-zinc-400 uppercase">3. Gate CS:APP Ativo</span>
+        <p id="nextCsappGate" class="text-sm font-semibold text-zinc-100 mt-1 truncate">-</p>
+        <p id="nextCsappStatus" class="text-[11px] text-purple-400 font-mono mt-0.5">-</p>
+      </div>
+      <div class="bg-zinc-950/70 border border-zinc-800/80 p-3 rounded-lg">
+        <span class="text-[11px] font-mono text-zinc-400 uppercase">4. Estrutura de Dados Alvo</span>
+        <p id="nextDsItem" class="text-sm font-semibold text-zinc-100 mt-1 truncate">-</p>
+        <p id="nextDsLevel" class="text-[11px] text-amber-400 font-mono mt-0.5">-</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- KPI SUMMARY -->
+  <section class="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
+    <div class="bg-zinc-900/60 border border-zinc-800 p-3.5 rounded-xl">
+      <span class="text-[11px] font-mono text-zinc-400 uppercase">Consistência Semanal</span>
+      <p id="kpiWeeklyRate" class="text-xl font-bold text-emerald-400 mt-1">0%</p>
+    </div>
+    <div class="bg-zinc-900/60 border border-zinc-800 p-3.5 rounded-xl">
+      <span class="text-[11px] font-mono text-zinc-400 uppercase">Trilha 30 Passos</span>
+      <p id="kpiMaster" class="text-xl font-bold text-zinc-100 mt-1">0 / 30</p>
+    </div>
+    <div class="bg-zinc-900/60 border border-zinc-800 p-3.5 rounded-xl">
+      <span class="text-[11px] font-mono text-zinc-400 uppercase">42 + Bootcamps</span>
+      <p id="kpi42" class="text-xl font-bold text-blue-400 mt-1">0 / 58</p>
+    </div>
+    <div class="bg-zinc-900/60 border border-zinc-800 p-3.5 rounded-xl">
+      <span class="text-[11px] font-mono text-zinc-400 uppercase">CS:APP Labs</span>
+      <p id="kpiCsapp" class="text-xl font-bold text-purple-400 mt-1">0 / 7</p>
+    </div>
+    <div class="bg-zinc-900/60 border border-zinc-800 p-3.5 rounded-xl">
+      <span class="text-[11px] font-mono text-zinc-400 uppercase">Estruturas (0-15)</span>
+      <p id="kpiDs" class="text-xl font-bold text-amber-400 mt-1">0 / 52</p>
+    </div>
+    <div class="bg-zinc-900/60 border border-zinc-800 p-3.5 rounded-xl">
+      <span class="text-[11px] font-mono text-zinc-400 uppercase">Capítulos Lidos</span>
+      <p id="kpiBooks" class="text-xl font-bold text-cyan-400 mt-1">0 / 0</p>
+    </div>
+  </section>
+
+  <!-- WEEKLY STUDY TRACKER & CHART -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div class="lg:col-span-2 bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 overflow-x-auto">
+      <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+        <div>
+          <h2 class="text-sm font-semibold text-zinc-200">Blocos Diários de Estudo & Engenharia</h2>
+          <p class="text-xs text-zinc-400">Sequência semanal dos pilares técnicos</p>
+        </div>
+        <div class="flex gap-2">
+          <input id="habitInput" type="text" placeholder="Nova meta de estudo..." class="bg-zinc-900 border border-zinc-700 rounded px-2.5 py-1 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500" />
+          <button onclick="addHabit()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded text-xs transition">+</button>
+          <button onclick="resetWeek()" class="text-xs text-zinc-400 hover:text-red-400 ml-1">Fechar Semana</button>
+        </div>
+      </div>
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-zinc-800 text-[11px] font-mono text-zinc-400 uppercase">
+            <th class="py-2 px-2">Bloco de Estudo</th>
+            <th class="py-2 px-2 text-center">Seg</th>
+            <th class="py-2 px-2 text-center">Ter</th>
+            <th class="py-2 px-2 text-center">Qua</th>
+            <th class="py-2 px-2 text-center">Qui</th>
+            <th class="py-2 px-2 text-center">Sex</th>
+            <th class="py-2 px-2 text-center">Sáb</th>
+            <th class="py-2 px-2 text-center">Dom</th>
+            <th class="py-2 px-2 text-center">Streak</th>
+            <th class="py-2 px-1"></th>
+          </tr>
+        </thead>
+        <tbody id="habitList" class="divide-y divide-zinc-800/60 text-xs md:text-sm"></tbody>
+      </table>
+    </div>
+
+    <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 flex flex-col justify-between">
+      <div>
+        <h2 class="text-sm font-semibold text-zinc-200 mb-1">Gráfico de Sequência Semanal</h2>
+        <p class="text-xs text-zinc-400 mb-4">Conclusão diária dos blocos (%)</p>
+      </div>
+      <div class="relative h-52 w-full">
+        <canvas id="weeklyChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION TABS -->
+  <div class="flex flex-wrap gap-2 border-b border-zinc-800 pb-3 mb-6">
+    <button onclick="switchTab('tab-master')" id="btn-tab-master" class="tab-btn bg-emerald-600 text-white px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition">1. Sequência Mestra (30 Passos)</button>
+    <button onclick="switchTab('tab-42')" id="btn-tab-42" class="tab-btn bg-zinc-900 hover:bg-zinc-800 text-zinc-300 px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition">2. Roteiro 42 + Bootcamps (58)</button>
+    <button onclick="switchTab('tab-csapp')" id="btn-tab-csapp" class="tab-btn bg-zinc-900 hover:bg-zinc-800 text-zinc-300 px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition">3. Protocolo CS:APP (Hard Gates)</button>
+    <button onclick="switchTab('tab-ds')" id="btn-tab-ds" class="tab-btn bg-zinc-900 hover:bg-zinc-800 text-zinc-300 px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition">4. Estruturas de Dados (Níveis 0–15)</button>
+    <button onclick="switchTab('tab-books')" id="btn-tab-books" class="tab-btn bg-zinc-900 hover:bg-zinc-800 text-zinc-300 px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition">5. Biblioteca Fundamental (17 Livros)</button>
+    <button onclick="switchTab('tab-years')" id="btn-tab-years" class="tab-btn bg-zinc-900 hover:bg-zinc-800 text-zinc-300 px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition">6. Mapa de 5 Anos (Macro)</button>
+  </div>
+
+  <!-- TAB CONTAINERS -->
+  <div id="tab-master" class="tab-content space-y-6"></div>
+  <div id="tab-42" class="tab-content hidden space-y-6"></div>
+  <div id="tab-csapp" class="tab-content hidden space-y-4"></div>
+  <div id="tab-ds" class="tab-content hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  <div id="tab-books" class="tab-content hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  <div id="tab-years" class="tab-content hidden space-y-4"></div>
+
+  <!-- MODULAR SCRIPTS -->
+  <script src="./data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
